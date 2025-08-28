@@ -1,0 +1,78 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/27.0.9 Chrome/134.0.6998.205 Electron/35.4.0 Safari/537.36" version="27.0.9">
+  <diagram name="Page-1" id="mjy8bFJhuXBux8th20lp">
+    <mxGraphModel dx="1042" dy="626" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="l78XhnSB4VW4voev6Lwx-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="l78XhnSB4VW4voev6Lwx-1" target="l78XhnSB4VW4voev6Lwx-4">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="190" y="300" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l78XhnSB4VW4voev6Lwx-1" value="RAM" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="130" y="90" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="l78XhnSB4VW4voev6Lwx-3" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;RAM&lt;/h1&gt;&lt;div&gt;It represents non-volatile memory. It shall be represented by postgresql, usually a supabase or firebase instance.&lt;/div&gt;" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="260" y="50" width="180" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="l78XhnSB4VW4voev6Lwx-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="l78XhnSB4VW4voev6Lwx-4" target="l78XhnSB4VW4voev6Lwx-8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="l78XhnSB4VW4voev6Lwx-4" value="Cache" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="130" y="310" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="l78XhnSB4VW4voev6Lwx-6" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;Cache&lt;/h1&gt;&lt;div&gt;A smaller memory used to store the most frequently used information, implemented by redis.&lt;/div&gt;" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="260" y="220" width="180" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="l78XhnSB4VW4voev6Lwx-8" value="CPU" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="260" y="460" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="l78XhnSB4VW4voev6Lwx-9" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;CPU&lt;/h1&gt;&lt;div&gt;The brain of the entire system, performs all computing and analytical work, usually a spabase edge function/firebase compute function.&lt;/div&gt;" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="390" y="400" width="180" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="l78XhnSB4VW4voev6Lwx-12" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;how?&lt;/h1&gt;&lt;div&gt;The entire memory mgmt. will be shown using a react frontend, where all three memory block will be shown and a input box will be provided to the user and the user will input a word(32-bit) and there will be arrows to show the user about cache hit/miss and retrival from the main memory. There will be timings shown for each operation.&amp;nbsp;&amp;nbsp;&lt;/div&gt;" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="580" y="50" width="180" height="460" as="geometry" />
+        </mxCell>
+        <mxCell id="l78XhnSB4VW4voev6Lwx-13" value="We would be creating an instance of firebase/supabase and redis, each of them will have a repeating schema which shall contain all the memory addresses predefined like i shall store around 100 rows of data in the main memory and 10 rows of data in the cache, each of the rows will have a unique hexcode which can be compared to memory addresses used in memory devices. The backend for this will be made using express, which shall inculde a route for searching in cache i.e. redis db, if not found redirecting the search to main memory i.e. hitting the postgresdb. If found in postgres db then it shall be updated in the redis cache as well using the MRU algorithm, the backend will also contain routes for deleting a particular word from memory address and if all of the rows are full the user might need to delete few rows to make space, the react frontend will have 3 blocks which shall represent all the 3 blocks of memory and each of them will have a bus going between them, usually a websocket connection/restful connection which shall depict the buses and these will be red coloured lines and whenever a request is passed it will show it as green and after a while turn back to red and this delay will be shown in a tabultated form. also the postgres and cache will data will be shown in the frontend.&amp;nbsp; &amp;nbsp;&amp;nbsp;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="20" y="490" width="830" height="330" as="geometry" />
+        </mxCell>
+        <mxCell id="l78XhnSB4VW4voev6Lwx-14" value="" style="whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="130" y="800" width="210" height="210" as="geometry" />
+        </mxCell>
+        <mxCell id="l78XhnSB4VW4voev6Lwx-15" value="" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="130" y="800" width="210" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="l78XhnSB4VW4voev6Lwx-16" value="" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="130" y="860" width="210" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="l78XhnSB4VW4voev6Lwx-17" value="" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="130" y="920" width="210" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="l78XhnSB4VW4voev6Lwx-18" value="" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="130" y="970" width="210" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="l78XhnSB4VW4voev6Lwx-19" value="" style="endArrow=none;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="l78XhnSB4VW4voev6Lwx-18" target="l78XhnSB4VW4voev6Lwx-15">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="400" y="750" as="sourcePoint" />
+            <mxPoint x="450" y="700" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l78XhnSB4VW4voev6Lwx-20" value="0x01&lt;span style=&quot;color: rgba(0, 0, 0, 0); font-family: monospace; font-size: 0px; text-align: start; text-wrap-mode: nowrap;&quot;&gt;%3CmxGraphModel%3E%3Croot%3E%3CmxCell%20id%3D%220%22%2F%3E%3CmxCell%20id%3D%221%22%20parent%3D%220%22%2F%3E%3CmxCell%20id%3D%222%22%20value%3D%22%22%20style%3D%22rounded%3D1%3BwhiteSpace%3Dwrap%3Bhtml%3D1%3B%22%20vertex%3D%221%22%20parent%3D%221%22%3E%3CmxGeometry%20x%3D%22130%22%20y%3D%22920%22%20width%3D%22210%22%20height%3D%2250%22%20as%3D%22geometry%22%2F%3E%3C%2FmxCell%3E%3C%2Froot%3E%3C%2FmxGraphModel%3E&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="150" y="875" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="l78XhnSB4VW4voev6Lwx-21" value="0x01&lt;span style=&quot;color: rgba(0, 0, 0, 0); font-family: monospace; font-size: 0px; text-align: start; text-wrap-mode: nowrap;&quot;&gt;%3CmxGraphModel%3E%3Croot%3E%3CmxCell%20id%3D%220%22%2F%3E%3CmxCell%20id%3D%221%22%20parent%3D%220%22%2F%3E%3CmxCell%20id%3D%222%22%20value%3D%22%22%20style%3D%22rounded%3D1%3BwhiteSpace%3Dwrap%3Bhtml%3D1%3B%22%20vertex%3D%221%22%20parent%3D%221%22%3E%3CmxGeometry%20x%3D%22130%22%20y%3D%22920%22%20width%3D%22210%22%20height%3D%2250%22%20as%3D%22geometry%22%2F%3E%3C%2FmxCell%3E%3C%2Froot%3E%3C%2FmxGraphModel%3E&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="150" y="815" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="l78XhnSB4VW4voev6Lwx-22" value="0x01&lt;span style=&quot;color: rgba(0, 0, 0, 0); font-family: monospace; font-size: 0px; text-align: start; text-wrap-mode: nowrap;&quot;&gt;%3CmxGraphModel%3E%3Croot%3E%3CmxCell%20id%3D%220%22%2F%3E%3CmxCell%20id%3D%221%22%20parent%3D%220%22%2F%3E%3CmxCell%20id%3D%222%22%20value%3D%22%22%20style%3D%22rounded%3D1%3BwhiteSpace%3Dwrap%3Bhtml%3D1%3B%22%20vertex%3D%221%22%20parent%3D%221%22%3E%3CmxGeometry%20x%3D%22130%22%20y%3D%22920%22%20width%3D%22210%22%20height%3D%2250%22%20as%3D%22geometry%22%2F%3E%3C%2FmxCell%3E%3C%2Froot%3E%3C%2FmxGraphModel%3E&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="150" y="930" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="l78XhnSB4VW4voev6Lwx-23" value="0x01&lt;span style=&quot;color: rgba(0, 0, 0, 0); font-family: monospace; font-size: 0px; text-align: start; text-wrap-mode: nowrap;&quot;&gt;%3CmxGraphModel%3E%3Croot%3E%3CmxCell%20id%3D%220%22%2F%3E%3CmxCell%20id%3D%221%22%20parent%3D%220%22%2F%3E%3CmxCell%20id%3D%222%22%20value%3D%22%22%20style%3D%22rounded%3D1%3BwhiteSpace%3Dwrap%3Bhtml%3D1%3B%22%20vertex%3D%221%22%20parent%3D%221%22%3E%3CmxGeometry%20x%3D%22130%22%20y%3D%22920%22%20width%3D%22210%22%20height%3D%2250%22%20as%3D%22geometry%22%2F%3E%3C%2FmxCell%3E%3C%2Froot%3E%3C%2FmxGraphModel%3E&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="150" y="980" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="l78XhnSB4VW4voev6Lwx-27" value="each of the filled boxes show words otherwise empty ones are depicted by a dash" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="440" y="855" width="280" height="100" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
