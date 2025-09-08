@@ -22,7 +22,7 @@ async function write(word) {
 
         for (let block of memoryBlocks) {
             const value = await client.hGet(block, "data");
-            if (!value) {
+            if (value === null || value === undefined) {
                 targetBlock = block;
                 break;
             }
@@ -30,8 +30,12 @@ async function write(word) {
 
         if (!targetBlock) {
             const lru = await client.zRange('lruSet', 0, 0);
-            targetBlock = lru[0];
-            await client.zRem('lruSet', targetBlock);
+            if (lru && lru.length > 0) {
+                targetBlock = lru[0];
+                await client.zRem('lruSet', targetBlock);
+            } else {
+                throw new Error("LRU set is empty. Cannot select a block.");
+            }
         }
 
         await client.hSet(targetBlock, "data", word);
@@ -75,6 +79,12 @@ app.post("/read", async (req, res) => {
         return res.json({ error: error.message });
     }
 });
+
+
+// alu implementaion and execute stage for executing instruction after accessing data from main memory
+// cpu -> run program -> goes to first location -> gets memory address -> checks cache -> if not main memory ..
+// depends on r/w instruction
+// if write then information word goes to cpu and write operation is initiated
 
 app.listen(5000, (err) => {
     if (err) console.error("Server Error!", err);
