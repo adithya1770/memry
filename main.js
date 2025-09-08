@@ -16,10 +16,39 @@ await client.connect();
 app.use(express.json());
 
 async function write(word) {
-    // implement the write function here, such that when the word is not present in memory i.e.
-    // it shows word not present in memory then it shall write to both cache as well as the main memory
-    // to the same location. The flow should be user hits /read -> no word -> call this function.
+    try {
+        const memoryBlocks = ['0x00', '0x01', '0x02', '0x03'];  
+        let targetBlock = null;
+
+        for (let block of memoryBlocks) {
+            const value = await client.hGet(block, "data");
+            if (!value) {
+                targetBlock = block;
+                break;
+            }
+        }
+
+        if (!targetBlock) {
+            const lru = await client.zRange('lruSet', 0, 0);
+            targetBlock = lru[0];
+            await client.zRem('lruSet', targetBlock);
+        }
+
+        await client.hSet(targetBlock, "data", word);
+        const timestamp = Date.now();
+        await client.zAdd('lruSet', [{ score: timestamp, value: targetBlock }]);
+
+        await supabase
+            .from('main_memory')
+            .upsert({ word, address: targetBlock });
+
+        return targetBlock;
+    } catch (error) {
+        console.error("Write Error", error);
+        throw error;
+    }
 }
+
 
 app.post("/read", async (req, res) => {
     try {
@@ -39,9 +68,8 @@ app.post("/read", async (req, res) => {
 
         if (error) return res.json({ status: "Error", error });
         if (data.length > 0) return res.json({ status: "Cache Miss", position: data[0].address });
-
+        const newAddress= await write(word)
         return res.json({ status: "Word not present in Main Memory" });
-        // call the function here
 
     } catch (error) {
         return res.json({ error: error.message });
