@@ -16,35 +16,39 @@ await client.connect();
 app.use(express.json());
 
 async function write(word) {
-try{
-    const memoryAddress=['0x01', '0x02', '0x03']
-    let targetAddress=null 
-    const values=await client.hmGet('0x00',...memoryAddress)
-    for(let i=0;i<values.length;i++){
-        if(!values[i]){
-            targetAddress=memoryAddress[i]
-            break;
+    try {
+        const memoryBlocks = ['0x00', '0x01', '0x02', '0x03'];  
+        let targetBlock = null;
+
+        for (let block of memoryBlocks) {
+            const value = await client.hGet(block, "data");
+            if (!value) {
+                targetBlock = block;
+                break;
+            }
         }
-    }
-    if(!targetAddress){
-        const lru= await client.zRange('lruSet',0,0)
-        targetAddress=lru[0]
-        await client.zRem('lruset',targetAddress)
-        
-    }
- 
-        await client.hSet('0x00', targetAddress, word);
+
+        if (!targetBlock) {
+            const lru = await client.zRange('lruSet', 0, 0);
+            targetBlock = lru[0];
+            await client.zRem('lruSet', targetBlock);
+        }
+
+        await client.hSet(targetBlock, "data", word);
         const timestamp = Date.now();
-        await client.zAdd('lruSet', [{ score: timestamp, value: targetAddress }]);
-        await supabase.from('main_memory').insert([{ word, address: targetAddress }
-]);
-        return targetAddress;
- }
-    catch(error){
-        console.error("Write Error",error)
+        await client.zAdd('lruSet', [{ score: timestamp, value: targetBlock }]);
+
+        await supabase
+            .from('main_memory')
+            .upsert({ word, address: targetBlock });
+
+        return targetBlock;
+    } catch (error) {
+        console.error("Write Error", error);
         throw error;
+    }
 }
-}
+
 
 app.post("/read", async (req, res) => {
     try {
