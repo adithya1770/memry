@@ -104,6 +104,80 @@ app.post("/compute", async(req, res) => {
     res.json({ alu_opcode, operand_one, operand_two, result });
 })
 
+async function readWord(address) {
+    // Check Redis cache
+    const cachedValue = await client.hGet(address, "data");
+    if (cachedValue !== null && cachedValue !== undefined) {
+        return parseInt(cachedValue);
+    }
+
+    // Check Supabase main memory
+    const { data } = await supabase
+        .from("main_memory")
+        .select("word")
+        .eq("address", address);
+
+    if (data && data.length > 0) {
+        return parseInt(data[0].word);
+    }
+
+    // Not found anywhere: fallback
+    await write(0);
+    return 0;
+}
+
+async function executeInstruction(instruction) {
+    return new Promise(async (resolve) => {
+        const startTime = Date.now();
+
+        setTimeout(async () => {
+            try {
+                // Parse instruction: "ADD #0x01 #0x04"
+                const [opcode, op1Logical, op2Logical] = instruction.split(" ");
+                const logicalAddr1 = op1Logical.replace("#", "");
+                const logicalAddr2 = op2Logical.replace("#", "");
+
+                // Resolve physical addresses from page table
+                const { data: page1 } = await supabase
+                    .from("page_table")
+                    .select("physical_address")
+                    .eq("logical_address", logicalAddr1);
+
+                const { data: page2 } = await supabase
+                    .from("page_table")
+                    .select("physical_address")
+                    .eq("logical_address", logicalAddr2);
+
+                if (!page1 || !page1.length || !page2 || !page2.length) {
+                    throw new Error("Logical address not found in page table");
+                }
+
+                const physicalAddr1 = page1[0].physical_address;
+                const physicalAddr2 = page2[0].physical_address;
+
+                // Read operands
+                const operand_one = await readWord(physicalAddr1);
+                const operand_two = await readWord(physicalAddr2);
+
+                // Execute ALU
+                const result = INSTRUCTION_DECODER_DAA_WRAPPER(
+                    opcode,
+                    operand_one,
+                    operand_two
+                );
+
+                const endTime = Date.now();
+                const timeTaken = endTime - startTime;
+
+                resolve({ result, timeTaken, operand_one, operand_two, opcode });
+            } catch (err) {
+                resolve({ error: err.message });
+            }
+        }, 0);
+    });
+}
+
+
 app.listen(5000, (err) => {
     if (err) console.error("Server Error!", err);
     else console.log("Server is live on port 5000!");
