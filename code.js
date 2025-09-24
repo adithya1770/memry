@@ -105,13 +105,11 @@ app.post("/compute", async(req, res) => {
 })
 
 async function readWord(address) {
-    // Check Redis cache
     const cachedValue = await client.hGet(address, "data");
     if (cachedValue !== null && cachedValue !== undefined) {
         return parseInt(cachedValue);
     }
 
-    // Check Supabase main memory
     const { data } = await supabase
         .from("main_memory")
         .select("word")
@@ -121,7 +119,7 @@ async function readWord(address) {
         return parseInt(data[0].word);
     }
 
-    // Not found anywhere: fallback
+    // ISSUUE IN CONSISTENCY JUST CHANGE IT TO return null remove both lines
     await write(0);
     return 0;
 }
@@ -129,7 +127,7 @@ async function readWord(address) {
 async function executeInstruction(instruction) {
     return new Promise(async (resolve) => {
         const startTime = Date.now();
-
+        // NO NEED FOR SET TIMEOUT USE TRY CATCH BLOCK ONLY....ITS REDUNDANT SINCE ASYNC FUNCTION INSIDE ANOTHER ASYNC
         setTimeout(async () => {
             try {
                 // Parse instruction: "ADD #0x01 #0x04"
