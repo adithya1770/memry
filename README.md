@@ -10,3 +10,4 @@
 
 <h1>Day 4</h1>
 <p>run npm install to install necessary packages and to run the project use node main.js</p>
+<img width="1463" height="702" alt="visual" src="https://github.com/user-attachments/assets/960b401d-4685-451e-abbc-c2c08b8113da" />
