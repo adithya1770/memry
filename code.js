@@ -137,59 +137,63 @@ async function readWord(address) {
 
 app.post("/execute", async (req, res) => {
     const { instruction } = req.body;
-
-    res.setHeader("Content-Type", "text/event-stream");
-
-    const sleep = ms => new Promise(r => setTimeout(r, ms));
-
+    const timings = {};
+    
     try {
+        let start = Date.now();
         const [opcode, op1Logical, op2Logical] = instruction.split(" ");
         const logicalAddr1 = op1Logical.replace("#", "");
         const logicalAddr2 = op2Logical.replace("#", "");
+        timings.parsing = Date.now() - start;
 
-        res.write(`data: Instruction parsed\n\n`);
-        await sleep(500);
+        // HUGE ISSUE IT REPLACES # I DONT KNOW WHY? REWORK THE ENTIRE EXECUTE BLOCK RAISE AN ISSUE
 
+        start = Date.now();
         const { data: page1 } = await supabase
             .from("page_table")
             .select("physical_address")
             .eq("logical_address", logicalAddr1);
-        res.write(`data: Physical memory access for operand 1\n\n`);
-        await sleep(500);
+        timings.pageTable1 = Date.now() - start;
 
+        start = Date.now();
         const { data: page2 } = await supabase
             .from("page_table")
             .select("physical_address")
             .eq("logical_address", logicalAddr2);
-        res.write(`data: Physical memory access for operand 2\n\n`);
-        await sleep(500);
+        timings.pageTable2 = Date.now() - start;
 
         if (!page1.length || !page2.length) throw new Error("Logical address not found");
 
         const physicalAddr1 = page1[0].physical_address;
         const physicalAddr2 = page2[0].physical_address;
 
-        res.write(`data: Retrieved addresses from page table\n\n`);
-        await sleep(500);
-
+        start = Date.now();
         const operand_one = await readWord(physicalAddr1);
+        timings.readOperand1 = Date.now() - start;
+
+        start = Date.now();
         const operand_two = await readWord(physicalAddr2);
-        res.write(`data: Read operation successful: operand_one=${operand_one}, operand_two=${operand_two}\n\n`);
-        await sleep(500);
+        timings.readOperand2 = Date.now() - start;
 
+        start = Date.now();
         const result = INSTRUCTION_DECODER_DAA_WRAPPER(opcode, operand_one, operand_two);
-        res.write(`data: ALU executed instruction: result=${result}\n\n`);
-        await sleep(500);
+        timings.aluExecution = Date.now() - start;
 
-        res.write(`data: Execution finished\n\n`);
-
-        res.write("event: end\ndata: done\n\n");
-        res.end();
+        res.json({ 
+            success: true,
+            result, 
+            operand_one, 
+            operand_two, 
+            opcode,
+            timings 
+        });
 
     } catch (err) {
-        res.write(`data: Error: ${err.message}\n\n`);
-        res.write("event: end\ndata: done\n\n");
-        res.end();
+        res.json({ 
+            success: false,
+            error: err.message,
+            timings 
+        });
     }
 });
 
