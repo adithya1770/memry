@@ -6,10 +6,10 @@ import Module from "./main.js";
 const app = express();
 const client = createClient({
     username: 'default',
-    password: 'H8Yf4pmffBpBMsI27BTEEFHsrv2NrDBx',
+    password: 'J3g0ajqINj2CQHupBZEPqPiKKdd1w4Pr',
     socket: {
-        host: 'redis-19760.c61.us-east-1-3.ec2.redns.redis-cloud.com',
-        port: 19760
+        host: 'redis-16092.c246.us-east-1-4.ec2.redns.redis-cloud.com',
+        port: 16092
     }
 });
 client.on('error', err => console.log('Redis Client Error', err));
@@ -24,6 +24,17 @@ const INSTRUCTION_DECODER_DAA_WRAPPER = cpu.cwrap(
     ["string", "number", "number"]
 );
 
+async function lruSetEx(){
+    const exists = await client.exists("lruSet");
+    if(!exists){
+        const memoryBlocks = ['0x00', '0x01', '0x02', '0x03'];
+        for (const block of memoryBlocks) {
+            await client.zAdd('lruSet', [{ score: 0, value: block }]);
+        }
+        console.log("LRU set initialized");
+    }
+}
+await lruSetEx();
 
 async function write(word) {
     try {
@@ -124,56 +135,63 @@ async function readWord(address) {
     return 0;
 }
 
-async function executeInstruction(instruction) {
-    return new Promise(async (resolve) => {
-        const startTime = Date.now();
-        // NO NEED FOR SET TIMEOUT USE TRY CATCH BLOCK ONLY....ITS REDUNDANT SINCE ASYNC FUNCTION INSIDE ANOTHER ASYNC
-        setTimeout(async () => {
-            try {
-                // Parse instruction: "ADD #0x01 #0x04"
-                const [opcode, op1Logical, op2Logical] = instruction.split(" ");
-                const logicalAddr1 = op1Logical.replace("#", "");
-                const logicalAddr2 = op2Logical.replace("#", "");
+app.post("/execute", async (req, res) => {
+    const { instruction } = req.body;
 
-                // Resolve physical addresses from page table
-                const { data: page1 } = await supabase
-                    .from("page_table")
-                    .select("physical_address")
-                    .eq("logical_address", logicalAddr1);
+    res.setHeader("Content-Type", "text/event-stream");
 
-                const { data: page2 } = await supabase
-                    .from("page_table")
-                    .select("physical_address")
-                    .eq("logical_address", logicalAddr2);
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-                if (!page1 || !page1.length || !page2 || !page2.length) {
-                    throw new Error("Logical address not found in page table");
-                }
+    try {
+        const [opcode, op1Logical, op2Logical] = instruction.split(" ");
+        const logicalAddr1 = op1Logical.replace("#", "");
+        const logicalAddr2 = op2Logical.replace("#", "");
 
-                const physicalAddr1 = page1[0].physical_address;
-                const physicalAddr2 = page2[0].physical_address;
+        res.write(`data: Instruction parsed\n\n`);
+        await sleep(500);
 
-                // Read operands
-                const operand_one = await readWord(physicalAddr1);
-                const operand_two = await readWord(physicalAddr2);
+        const { data: page1 } = await supabase
+            .from("page_table")
+            .select("physical_address")
+            .eq("logical_address", logicalAddr1);
+        res.write(`data: Physical memory access for operand 1\n\n`);
+        await sleep(500);
 
-                // Execute ALU
-                const result = INSTRUCTION_DECODER_DAA_WRAPPER(
-                    opcode,
-                    operand_one,
-                    operand_two
-                );
+        const { data: page2 } = await supabase
+            .from("page_table")
+            .select("physical_address")
+            .eq("logical_address", logicalAddr2);
+        res.write(`data: Physical memory access for operand 2\n\n`);
+        await sleep(500);
 
-                const endTime = Date.now();
-                const timeTaken = endTime - startTime;
+        if (!page1.length || !page2.length) throw new Error("Logical address not found");
 
-                resolve({ result, timeTaken, operand_one, operand_two, opcode });
-            } catch (err) {
-                resolve({ error: err.message });
-            }
-        }, 0);
-    });
-}
+        const physicalAddr1 = page1[0].physical_address;
+        const physicalAddr2 = page2[0].physical_address;
+
+        res.write(`data: Retrieved addresses from page table\n\n`);
+        await sleep(500);
+
+        const operand_one = await readWord(physicalAddr1);
+        const operand_two = await readWord(physicalAddr2);
+        res.write(`data: Read operation successful: operand_one=${operand_one}, operand_two=${operand_two}\n\n`);
+        await sleep(500);
+
+        const result = INSTRUCTION_DECODER_DAA_WRAPPER(opcode, operand_one, operand_two);
+        res.write(`data: ALU executed instruction: result=${result}\n\n`);
+        await sleep(500);
+
+        res.write(`data: Execution finished\n\n`);
+
+        res.write("event: end\ndata: done\n\n");
+        res.end();
+
+    } catch (err) {
+        res.write(`data: Error: ${err.message}\n\n`);
+        res.write("event: end\ndata: done\n\n");
+        res.end();
+    }
+});
 
 
 app.listen(5000, (err) => {
