@@ -84,7 +84,7 @@ app.post("/read", async (req, res) => {
             const result = await client.hGet(cache, "data");
             cacheResp.push(result);
         }
-        const index = cacheResp.indexOf(word);
+        const index = cacheResp.indexOf(String(word));
         if (index !== -1) {
             return res.json({ status: "Cache Hit", position: index });
         }
@@ -104,6 +104,7 @@ app.post("/read", async (req, res) => {
     }
 });
 
+
 // alu implementaion and execute stage for executing instruction after accessing data from main memory
 // cpu -> run program -> goes to first location -> gets memory address -> checks cache -> if not main memory ..
 // depends on r/w instruction
@@ -111,13 +112,23 @@ app.post("/read", async (req, res) => {
 
 app.post("/compute", async(req, res) => {
     const { alu_opcode, operand_one, operand_two } = req.body;
-    const result = INSTRUCTION_DECODER_DAA_WRAPPER(alu_opcode, operand_one, operand_two);
-    res.json({ alu_opcode, operand_one, operand_two, result });
+    const result = await compute(alu_opcode, operand_one, operand_two);
+    return res.json(result);
 })
+
+async function compute(alu_opcode, operand_one, operand_two){
+    try{
+        const result = INSTRUCTION_DECODER_DAA_WRAPPER(alu_opcode, operand_one, operand_two);
+        return result
+    }
+    catch(err){
+        throw new Error("Compute Routine Failed!")
+    }
+}
 
 async function readWord(address) {
     const cachedValue = await client.hGet(address, "data");
-    if (cachedValue !== null && cachedValue !== undefined) {
+    if (cachedValue !== null && cachedValue !== undefined && cachedValue !== "null") {
         return parseInt(cachedValue);
     }
 
@@ -130,73 +141,87 @@ async function readWord(address) {
         return parseInt(data[0].word);
     }
 
-    // ISSUUE IN CONSISTENCY JUST CHANGE IT TO return null remove both lines
-    await write(0);
-    return 0;
+    return null;
 }
 
 app.post("/execute", async (req, res) => {
-    const { instruction } = req.body;
-    const timings = {};
-    
-    try {
-        let start = Date.now();
-        const [opcode, op1Logical, op2Logical] = instruction.split(" ");
-        const logicalAddr1 = op1Logical.replace("#", "");
-        const logicalAddr2 = op2Logical.replace("#", "");
-        timings.parsing = Date.now() - start;
-
-        // HUGE ISSUE IT REPLACES # I DONT KNOW WHY? REWORK THE ENTIRE EXECUTE BLOCK RAISE AN ISSUE
-
-        start = Date.now();
-        const { data: page1 } = await supabase
+    try{
+        const detailMap = {};
+        const { instruction } = req.body;
+        const irArray = instruction.split(" ");
+        const operator = irArray[0];
+        const op_address_one = irArray[1];
+        const op_address_two = irArray[2];
+        detailMap["first_la"] = op_address_one;
+        detailMap["second_la"] = op_address_two;
+        
+        let { data: page_table, error } = await supabase
+        .from('page_table')
+        .select('*')
+        console.log(page_table);
+        const start_one = performance.now();
+        const op1_page_table_access = await supabase
             .from("page_table")
-            .select("physical_address")
-            .eq("logical_address", logicalAddr1);
-        timings.pageTable1 = Date.now() - start;
-
-        start = Date.now();
-        const { data: page2 } = await supabase
+            .select("*")
+            .eq("logical_address", op_address_one);
+        const op2_page_table_access = await supabase
             .from("page_table")
-            .select("physical_address")
-            .eq("logical_address", logicalAddr2);
-        timings.pageTable2 = Date.now() - start;
+            .select("*")
+            .eq("logical_address", op_address_two);
+        const end_one = performance.now();
+        detailMap["page table access"] = end_one - start_one;
 
-        if (!page1.length || !page2.length) throw new Error("Logical address not found");
+        if (op1_page_table_access.error || !op1_page_table_access.data || op1_page_table_access.data.length === 0) {
+            throw new Error(`Page table lookup failed for logical address: ${op_address_one}`);
+        }
+        if (op2_page_table_access.error || !op2_page_table_access.data || op2_page_table_access.data.length === 0) {
+            throw new Error(`Page table lookup failed for logical address: ${op_address_two}`);
+        }
 
-        const physicalAddr1 = page1[0].physical_address;
-        const physicalAddr2 = page2[0].physical_address;
 
-        start = Date.now();
-        const operand_one = await readWord(physicalAddr1);
-        timings.readOperand1 = Date.now() - start;
+        const start_two = performance.now();
+        const physical_addr_1 = op1_page_table_access.data[0].physical_address;
+        const physical_addr_2 = op2_page_table_access.data[0].physical_address;
+        detailMap["first_pa"]=physical_addr_1;
+        detailMap["second_pa"]=physical_addr_2;
+        const read_op1 = await readWord(physical_addr_1);
+        const read_op2 = await readWord(physical_addr_2);
+        const end_two = performance.now();
+        detailMap["memory access"] = end_two - start_two;
 
-        start = Date.now();
-        const operand_two = await readWord(physicalAddr2);
-        timings.readOperand2 = Date.now() - start;
+        const start_three = performance.now();
+        const res_comp = await compute(operator, read_op1, read_op2);
+        const end_three = performance.now();
+        detailMap["compute"] = end_three - start_three;
+        detailMap["compute_result"] = res_comp;
 
-        start = Date.now();
-        const result = INSTRUCTION_DECODER_DAA_WRAPPER(opcode, operand_one, operand_two);
-        timings.aluExecution = Date.now() - start;
-
-        res.json({ 
-            success: true,
-            result, 
-            operand_one, 
-            operand_two, 
-            opcode,
-            timings 
-        });
-
-    } catch (err) {
-        res.json({ 
-            success: false,
-            error: err.message,
-            timings 
-        });
+        return res.status(200).json(detailMap);
     }
-});
+    catch(err){
+        return res.status(500).json({"message": err.message});
+    }
+})
 
+
+async function load(address, value){
+    try{
+        const verdict = await supabase.from("main_memory").update({"word": value}).eq("address",address);
+        return { message: "Load successful", verdict };
+    }
+    catch(err){
+        throw new Error(`Load failed: ${err.message}`);
+    }
+}
+
+app.post("/load", async(req, res) => {
+    try {
+        const { address, value } = req.body;
+        const result = await load(address, value);
+        return res.status(200).json(result);
+    } catch(err) {
+        return res.status(500).json({ error: err.message });
+    }
+})
 
 app.listen(5000, (err) => {
     if (err) console.error("Server Error!", err);

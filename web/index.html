@@ -10,9 +10,55 @@
 
     <script src="libraries/p5.min.js"></script>
     <script src="libraries/p5.sound.min.js"></script>
+    <script src="sketch.js"></script>
   </head>
 
-  <body>
-    <script src="sketch.js"></script>
+  <body style="background-color: gray;">
+    <h2 style="font-family: monospace;">Instruction</h2>
+    <input type="text" id="instruction">
+    <button  style="font-family: monospace;">Execute</button>
+    <p style="font-family: monospace;">instructions have to be in this format ADD logical_address1 logical_address2</p>
+    <h2  style="font-family: monospace;">Load Instruction</h2>
+    <div style="font-family: monospace; margin-bottom: 10px;">
+      Address <input type="text" id="address">
+      Value <input type="text" id="value">
+      <button style="font-family: monospace;">Execute</button>
+      <p>address are 0x01, 0x02 .. and values can be any integers.</p>
+    </div>
+      <script>
+      async function load() {
+        const add = document.getElementById("address").value;
+        const val = document.getElementById("value").value;
+
+        const res = await fetch("https://localhost:5000/load", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            address: add,
+            value: val
+          })
+        });
+        document.getElementById("resultTag").innerText = res.text();
+      }
+
+      async function execute() {
+        const vals = document.getElementById("instruction").value;
+
+        const res = await fetch("https://localhost:5000/execute", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            instruction: vals
+          })
+        });
+
+        document.getElementById("resultTag").innerText = res.text();
+      }
+    </script>
   </body>
+  <script src="sketch.js"></script>
 </html>
