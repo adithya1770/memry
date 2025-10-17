@@ -1,6 +1,8 @@
 FROM ubuntu
 
-RUN apt update && apt install -y nodejs npm
+RUN apt update && \
+    apt install -y nodejs npm && \
+    apt clean && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
 
