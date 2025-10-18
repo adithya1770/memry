@@ -16,13 +16,13 @@
   <body style="background-color: gray;">
     <h2 style="font-family: monospace;">Instruction</h2>
     <input type="text" id="instruction">
-    <button  style="font-family: monospace;">Execute</button>
+    <button  style="font-family: monospace;" onclick="execute()">Execute</button>
     <p style="font-family: monospace;">instructions have to be in this format ADD logical_address1 logical_address2</p>
     <h2  style="font-family: monospace;">Load Instruction</h2>
     <div style="font-family: monospace; margin-bottom: 10px;">
       Address <input type="text" id="address">
       Value <input type="text" id="value">
-      <button style="font-family: monospace;">Execute</button>
+      <button style="font-family: monospace;" onclick="load()">Execute</button>
       <p>address are 0x01, 0x02 .. and values can be any integers.</p>
     </div>
       <script>
@@ -30,7 +30,7 @@
         const add = document.getElementById("address").value;
         const val = document.getElementById("value").value;
 
-        const res = await fetch("https://localhost:5000/load", {
+        const res = await fetch("http://localhost:5000/load", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -46,7 +46,7 @@
       async function execute() {
         const vals = document.getElementById("instruction").value;
 
-        const res = await fetch("https://localhost:5000/execute", {
+        const res = await fetch("http://localhost:5000/execute", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -56,7 +56,19 @@
           })
         });
 
-        document.getElementById("resultTag").innerText = res.text();
+        const resultJSON = await res.json();
+        first_la=resultJSON.first_la;
+        second_la=resultJSON.second_la;
+        first_pa=resultJSON.first_pa;
+        second_pa=resultJSON.second_pa;
+        ram_time=resultJSON.memory_access;
+        page_time=resultJSON.page_table_access
+        compute_time=Math.ceil(resultJSON.compute);
+
+        console.log(first_la, second_la, first_pa, second_pa, ram_time, compute_time)
+        console.log(resultJSON)
+
+        document.getElementById("resultTag").innerText = JSON.stringify(resultJSON, null, 2);
       }
     </script>
   </body>

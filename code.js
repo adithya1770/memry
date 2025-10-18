@@ -2,8 +2,10 @@ import express from "express";
 import { createClient } from "redis";
 import supabase from "./client.js";
 import Module from "./main.js";
+import cors from "cors";
 
 const app = express();
+app.use(cors());
 const client = createClient({
     username: 'default',
     password: 'J3g0ajqINj2CQHupBZEPqPiKKdd1w4Pr',
@@ -169,7 +171,7 @@ app.post("/execute", async (req, res) => {
             .select("*")
             .eq("logical_address", op_address_two);
         const end_one = performance.now();
-        detailMap["page table access"] = end_one - start_one;
+        detailMap["page_table_access"] = end_one - start_one;
 
         if (op1_page_table_access.error || !op1_page_table_access.data || op1_page_table_access.data.length === 0) {
             throw new Error(`Page table lookup failed for logical address: ${op_address_one}`);
@@ -187,7 +189,7 @@ app.post("/execute", async (req, res) => {
         const read_op1 = await readWord(physical_addr_1);
         const read_op2 = await readWord(physical_addr_2);
         const end_two = performance.now();
-        detailMap["memory access"] = end_two - start_two;
+        detailMap["memory_access"] = end_two - start_two;
 
         const start_three = performance.now();
         const res_comp = await compute(operator, read_op1, read_op2);
